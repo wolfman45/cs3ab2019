@@ -25,6 +25,7 @@ import iducs.springboot.board.exception.ResourceNotFoundException;
 import iducs.springboot.board.repository.UserRepository;
 import iducs.springboot.board.service.QuestionService;
 import iducs.springboot.board.service.UserService;
+import iducs.springboot.board.utils.HttpSessionUtils;
 
 @Controller
 @RequestMapping("/questions")
@@ -41,6 +42,9 @@ public class QuerstionController {
 	@PostMapping("")
 	// public String createUser(Question question, Model model, HttpSession session) {
 	public String createUser(String title, String contents, Model model, HttpSession session) {
+		if(HttpSessionUtils.isEmpty(session, "user")) {
+			return "redirect:/users/login-form";
+		}
 		User sessionUser = (User) session.getAttribute("user");
 		Question newQuestion = new Question(title, sessionUser, contents);		
 		// Question newQuestion = new Question(question.getTitle(), writer, question.getContents());	
@@ -49,8 +53,13 @@ public class QuerstionController {
 	}
 	
 	@GetMapping("/{id}")
-	public String getQuestionById(@PathVariable(value = "id") Long id, Model model) {
+	public String getQuestionById(@PathVariable(value = "id") Long id, Model model, HttpSession session) {
+		if(HttpSessionUtils.isEmpty(session, "user"))
+			return "redirect:/users/login-form";		
 		Question question = questionService.getQuestionById(id);
+		if(HttpSessionUtils.isSameUser((User)session.getAttribute("user"),question.getWriter())) {
+			model.addAttribute("same", question.getWriter());
+		}
 		model.addAttribute("question", question);
 		return "/questions/info";
 	}
